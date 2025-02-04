@@ -1,12 +1,12 @@
 from os import getenv
 
 from flask import Flask, jsonify, request
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwtы
 
 app = Flask(__name__)
 
 app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY")
-jwt = JWTManager(app)
+jwt_manager = JWTManager(app)
 
 # Пример данных
 tours = [
@@ -14,7 +14,7 @@ tours = [
     {"id": 2, "name": "Египет", "price": 120000}
 ]
 
-users = {"frodo": "123", "sam": "321"}
+users = {"frodo": "asd", "sam": "dsa"}
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -24,23 +24,26 @@ def login():
 
     if username in users and users[username] == password:
         roles = "admin" if username == "frodo" else "user"
-        token = create_access_token(identity={"username": username, "roles": roles})
-        return make_response("success", f"access_token: {token}")
+        # token = create_access_token(identity={"username": username, "roles": roles})
+        token = create_access_token(identity=str(username), additional_claims={"roles": roles})  
+        return make_response("success", "Токен создан", {"access_token": token})
     
     return make_response("error", "Неверный логин или пароль", status_code=401)
 
 @app.route("/protected", methods=["GET"])
 @jwt_required()
-def protected():
+def protected_route():
     current_user = get_jwt_identity()
     return make_response("success", f"Добро пожаловать, {current_user}!")
+    
 
 @app.route("/admin", methods=["GET"])
 @jwt_required()
 def admin_route():
     user = get_jwt_identity()
-    if user.get("roles") != "admin":
-        return make_response("error", "Доступ запрещён", status_code=403)
+    claims = get_jwt()
+    if claims.get("roles") != "admin":
+        return make_response("error", f"Доступ запрещён, {user}", status_code=403)
     return make_response("success", "Добро пожаловать, администратор!")
 
 # Структура унифицированного ответа
