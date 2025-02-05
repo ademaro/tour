@@ -1,7 +1,7 @@
 from os import getenv
 
 from flask import Flask, jsonify, request
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwtы
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 
 app = Flask(__name__)
 
