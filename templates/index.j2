@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <title>Flask API + JS</title>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      background-color: #f8f9fa;
+      color: #007bff;
+      margin: 0;
+      padding: 10px 0;
+      text-align: center;
+    }
+    div {
+      border: 1px solid #f8f9fa;
+      margin: 10px;
+      padding: 10px;
+    }
+    h2 {
+      color: #007bff;
+      margin: 0;
+    }
+    p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Туры</h1>
+  <div id="tours">Нет туров...</div>
+
+  <template>
+    <div>
+      <h2></h2>
+      <p></p>
+    </div>
+  </template>
+
+  <script>
+    const template = document.querySelector('template');
+    const toursElement = document.querySelector('#tours');
+
+    const addTour = ({ title, price }) => {
+      const clone = template.content.cloneNode(true);
+      clone.querySelector('h2').textContent = title;
+      clone.querySelector('p').textContent = price;
+      toursElement.appendChild(clone);
+    };
+
+    const addTours = (toursData) => {
+      toursElement.textContent = '';
+      toursData.forEach(addTour);
+    };
+
+    const getTours = async () => {
+      try {
+        const response = await fetch('{{ url_for('get_tours') }}');
+        const json = await response.json();
+        addTours(json.data);
+      } catch (error) {
+        console.error('Error fetching tours:', error);
+      }
+    };
+
+    getTours();
+  </script>
+</body>
+</html>
