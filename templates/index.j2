@@ -130,13 +130,49 @@
       toursData.forEach(addTour);
     };
 
+    const fetchData = async (url, options = {}) => {
+      try {
+        const response = await fetch(url, options);
+        const json = await response.json();
+        if (!response.ok) {
+          let errorMessage = json.message || `Ошибка сервера: ${response.status}`;
+          if (!json.message) {
+            switch (response.status) {
+              case 400:
+                errorMessage = 'Некорректный запрос';
+                break;
+              case 401:
+                errorMessage = 'Неавторизованный доступ';
+                break;
+              case 403:
+                errorMessage = 'Доступ запрещён';
+                break;
+              case 404:
+                errorMessage = 'Ресурс не найден';
+                break;
+              case 500:
+                errorMessage = 'Внутренняя ошибка сервера';
+                break;
+              default:
+                errorMessage = `Ошибка: ${response.status}`;
+            }
+          }
+          throw new Error(errorMessage);
+        }
+        return json;
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        alert(`Ошибка: ${error.message}`);
+        throw error;
+      }
+    };
+
     const getTours = async () => {
       try {
-        const response = await fetch('{{ url_for('get_tours') }}');
-        const json = await response.json();
+        const json = await fetchData('{{ url_for('get_tours') }}');
         addTours(json.data);
       } catch (error) {
-        console.error('Error fetching tours:', error);
+        console.error('Ошибка получения списка туров:', error);
       }
     };
 
@@ -144,8 +180,7 @@
 
     const getTour = async (id) => {
       try {
-        const response = await fetch(`/api/tours/${id}`);
-        const json = await response.json();
+        const json = await fetchData(`/api/tours/${id}`);
         const { title, description, price } = json.data;
         const clone = tourDetailsTemplate.content.cloneNode(true);
         clone.querySelector('h2').textContent = title;
@@ -154,7 +189,7 @@
         clone.querySelector('button').addEventListener('click', getTours);
         toursElement.appendChild(clone);
       } catch (error) {
-        console.error('Error fetching tour:', error);
+        console.error('Ошибка получения иформации о туре:', error);
       }
     };
 
@@ -182,15 +217,13 @@
       const password = document.querySelector('#password').value;
 
       try {
-        const response = await fetch('{{ url_for('login') }}', {
+        const json = await fetchData('{{ url_for('login') }}', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({ username, password })
         });
-
-        const json = await response.json();
 
         if (json.status === 'success') {
           localStorage.setItem('access_token', json.data.access_token);
@@ -206,7 +239,7 @@
           alert(`Ошибка входа: ${json.message}`);
         }
       } catch (error) {
-        console.error('Error during login:', error);
+        console.error('Ошибка при попытке входа:', error);
       }
     };
 
@@ -224,21 +257,19 @@
       if (!token) return;
 
       try {
-        const response = await fetch('{{ url_for('profile') }}', {
+        const json = await fetchData('{{ url_for('profile') }}', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        const json = await response.json();
-
         if (json.status === 'success') {
           profileInfo.textContent = `Добро пожаловать, ${json.message}!`;
         } else {
-          console.error('Error fetching profile:', json.message);
+          console.error('Ошибка при получении иформации о пользователе:', json.message);
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Ошибка при получении иформации о пользователе:', error);
       }
     };
 
