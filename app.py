@@ -1,12 +1,29 @@
 from os import getenv
 
 from flask import Flask, jsonify, request
+from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
+from sqlalchemy import create_engine, Column, Integer, String, TIMESTAMP, func
+from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.ext.declarative import declarative_base
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
+jwt_manager = JWTManager(app)
 
 app.config["JWT_SECRET_KEY"] = getenv("JWT_SECRET_KEY")
-jwt_manager = JWTManager(app)
+
+
+class Base(DeclarativeBase):
+    pass
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    password_hash = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    created_at = Column(TIMESTAMP, default=func.now())
 
 # Пример данных
 tours = [
