@@ -16,7 +16,7 @@
       padding: 10px 0;
       text-align: center;
     }
-    div {
+    .tour {
       border: 1px solid #f8f9fa;
       margin: 10px;
       padding: 10px;
@@ -28,14 +28,64 @@
     p {
       margin: 0;
     }
+    .login-form {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    .login-form input {
+      margin: 5px;
+      padding: 10px;
+      width: 200px;
+    }
+    .login-form button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .login-form button:hover {
+      background-color: #0056b3;
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    #login-button { margin: 10px; }
+    button { cursor: pointer; }
   </style>
 </head>
 <body>
   <h1>Туры</h1>
+
+  <div class="overlay" id="overlay"></div>
+  <form class="login-form" id="login-form">
+    <input type="text" id="username" placeholder="Имя пользователя">
+    <input type="password" id="password" placeholder="Пароль">
+    <button id="login-submit-button">Войти</button>
+  </form>
+  <button id="login-button">Войти</button>
+
   <div id="tours">Нет туров...</div>
 
   <template id="tour">
-    <div>
+    <div class="tour">
       <h2></h2>
       <p></p>
       <button>Подробнее</button>
@@ -43,7 +93,7 @@
   </template>
 
   <template id="tour-details">
-    <div>
+    <div class="tour">
       <h2></h2>
       <p></p>
       <p></p>
@@ -55,6 +105,10 @@
     const tourTemplate = document.querySelector('#tour');
     const tourDetailsTemplate = document.querySelector('#tour-details');
     const toursElement = document.querySelector('#tours');
+    const loginButton = document.querySelector('#login-button');
+    const loginForm = document.querySelector('#login-form');
+    const loginSubmitButton = document.querySelector('#login-submit-button');
+    const overlay = document.querySelector('#overlay');
 
     const addTour = ({ id, title, price }) => {
       const clone = tourTemplate.content.cloneNode(true);
@@ -105,6 +159,67 @@
         getTour(id);
       }
     };
+
+    const showLoginForm = () => {
+      loginForm.style.display = 'flex';
+      overlay.style.display = 'block';
+    };
+
+    const hideLoginForm = () => {
+      loginForm.style.display = 'none';
+      overlay.style.display = 'none';
+    };
+
+    const login = async () => {
+      const username = document.querySelector('#username').value;
+      const password = document.querySelector('#password').value;
+
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const json = await response.json();
+
+        if (json.status === 'success') {
+          localStorage.setItem('access_token', json.data.access_token);
+          alert('Вы успешно вошли в систему');
+          loginButton.textContent = 'Logout';
+          loginButton.removeEventListener('click', showLoginForm);
+          loginButton.addEventListener('click', logout);
+          hideLoginForm();
+          document.querySelector('#username').value = '';
+          document.querySelector('#password').value = '';
+        } else {
+          alert(`Ошибка входа: ${json.message}`);
+        }
+      } catch (error) {
+        console.error('Error during login:', error);
+      }
+    };
+
+    const logout = () => {
+      localStorage.removeItem('access_token');
+      alert('Вы вышли из системы');
+      loginButton.textContent = 'Войти';
+      loginButton.removeEventListener('click', logout);
+      loginButton.addEventListener('click', showLoginForm);
+    };
+
+    loginButton.addEventListener('click', showLoginForm);
+    loginForm.addEventListener('submit', login);
+    overlay.addEventListener('click', hideLoginForm);
+
+    // Проверка на то, что пользователь уже залогинен
+    if (localStorage.getItem('access_token')) {
+      loginButton.textContent = 'Выйти';
+      loginButton.removeEventListener('click', showLoginForm);
+      loginButton.addEventListener('click', logout);
+    }
   </script>
 </body>
 </html>
