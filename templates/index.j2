@@ -69,11 +69,16 @@
     }
     #login-button { margin: 10px; }
     button { cursor: pointer; }
+    .profile-info {
+      text-align: center;
+      margin: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Туры</h1>
 
+  <div class="profile-info" id="profile-info"></div>
   <div class="overlay" id="overlay"></div>
   <form class="login-form" id="login-form">
     <input type="text" id="username" placeholder="Имя пользователя">
@@ -109,6 +114,7 @@
     const loginForm = document.querySelector('#login-form');
     const loginSubmitButton = document.querySelector('#login-submit-button');
     const overlay = document.querySelector('#overlay');
+    const profileInfo = document.querySelector('#profile-info');
 
     const addTour = ({ id, title, price }) => {
       const clone = tourTemplate.content.cloneNode(true);
@@ -170,12 +176,13 @@
       overlay.style.display = 'none';
     };
 
-    const login = async () => {
+    const login = async (evt) => {
+      evt.preventDefault();
       const username = document.querySelector('#username').value;
       const password = document.querySelector('#password').value;
 
       try {
-        const response = await fetch('/login', {
+        const response = await fetch('{{ url_for('login') }}', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -188,12 +195,13 @@
         if (json.status === 'success') {
           localStorage.setItem('access_token', json.data.access_token);
           alert('Вы успешно вошли в систему');
-          loginButton.textContent = 'Logout';
+          loginButton.textContent = 'Выйти';
           loginButton.removeEventListener('click', showLoginForm);
           loginButton.addEventListener('click', logout);
           hideLoginForm();
           document.querySelector('#username').value = '';
           document.querySelector('#password').value = '';
+          getProfile();
         } else {
           alert(`Ошибка входа: ${json.message}`);
         }
@@ -208,6 +216,30 @@
       loginButton.textContent = 'Войти';
       loginButton.removeEventListener('click', logout);
       loginButton.addEventListener('click', showLoginForm);
+      profileInfo.textContent = '';
+    };
+
+    const getProfile = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+
+      try {
+        const response = await fetch('{{ url_for('profile') }}', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const json = await response.json();
+
+        if (json.status === 'success') {
+          profileInfo.textContent = `Добро пожаловать, ${json.message}!`;
+        } else {
+          console.error('Error fetching profile:', json.message);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
     };
 
     loginButton.addEventListener('click', showLoginForm);
@@ -219,6 +251,7 @@
       loginButton.textContent = 'Выйти';
       loginButton.removeEventListener('click', showLoginForm);
       loginButton.addEventListener('click', logout);
+      getProfile();
     }
   </script>
 </body>
