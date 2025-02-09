@@ -28,10 +28,10 @@ class User(Base):
 
 # Пример данных
 tours = [
-    {"id": 1, "title": "Тайланд", "price": 100000},
-    {"id": 2, "title": "Египет", "price": 120000},
-    {"id": 3, "title": "Таиланд", "price": 220000},
-    {"id": 4, "title": "Шри-Ланка", "price": 150000},
+    {"id": 1, "title": "Малайзия", "description": "Описание тура1", "price": 100000},
+    {"id": 2, "title": "Египет", "description": "Описание тура2", "price": 120000},
+    {"id": 3, "title": "Таиланд", "description": "Описание тура3", "price": 220000},
+    {"id": 4, "title": "Шри-Ланка", "description": "Описание тура4", "price": 150000},
 ]
 
 users = {"frodo": "asd", "sam": "dsa"}
@@ -85,12 +85,16 @@ def make_response(status, message, data=None, status_code=200):
     return response
 
 
-@app.route("/api/tours/<int:tour_id>", methods=["GET"])
-def get_tour(tour_id):
+@app.get("/api/tours/<int:tour_id>")
+def get_tour(tour_id=None):
     """Маршрут для получения тура по ID."""
+
+    if tour_id is None:
+        return make_response("error", "Не передан ID тура", status_code=400)
 
     # Найти тур в списке, где id совпадает с переданным tour_id
     for tour in tours:
+        # TODO: переписать на next()
         if tour["id"] == tour_id:  # Если id совпадает
             return make_response("success", "Тур найден", data=tour)  # Возвращаем найденный тур в формате JSON
 
@@ -101,6 +105,7 @@ def get_tour(tour_id):
 @app.get("/api/tours")
 def get_tours():
     """Получить все туры."""
+    # TODO: почистить поля тура
     return make_response("success", "Показаны все направления", tours)
 
 
