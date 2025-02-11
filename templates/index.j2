@@ -73,11 +73,19 @@
       text-align: center;
       margin: 20px;
     }
+    nav {
+      background-color: #f8f9fa;
+      padding: 10px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h1>Туры</h1>
-
+  <h1 {% if admin %}style="color:red;"{% endif %}>Туры</h1>
+  <nav>
+    <a href="{{ url_for('index') }}">Главная</a>
+    <a href="{{ url_for('admin') }}">Админка</a>
+  </nav>
   <div class="profile-info" id="profile-info"></div>
   <div class="overlay" id="overlay"></div>
   <form class="login-form" id="login-form">
@@ -97,6 +105,16 @@
     </div>
   </template>
 
+  <template id="tour-admin">
+    <div class="tour">
+      <h2></h2>
+      <p></p>
+      <p></p>
+      <button>Изменить</button>
+      <button>Удалить</button>
+    </div>
+  </template>
+
   <template id="tour-details">
     <div class="tour">
       <h2></h2>
@@ -106,8 +124,9 @@
     </div>
   </template>
 
-  <script>
+  <script type="module">
     const tourTemplate = document.querySelector('#tour');
+    const tourAdminTemplate = document.querySelector('#tour-admin');
     const tourDetailsTemplate = document.querySelector('#tour-details');
     const toursElement = document.querySelector('#tours');
     const loginButton = document.querySelector('#login-button');
@@ -125,9 +144,19 @@
       toursElement.appendChild(clone);
     };
 
-    const addTours = (toursData) => {
+    const addTourAdmin = ({ id, title, price, description }) => {
+      const clone = tourAdminTemplate.content.cloneNode(true);
+      clone.querySelector('h2').textContent = title;
+      clone.querySelector('p').textContent = description;
+      clone.querySelector('p:last-of-type').textContent = price;
+      clone.querySelector('button').dataset.id = id;
+      toursElement.appendChild(clone);
+    };
+
+    const addTours = (toursData, admin) => {
       toursElement.innerHTML = '';
-      toursData.forEach(addTour);
+      if (admin) toursData.forEach(addTourAdmin);
+      else toursData.forEach(addTour);
     };
 
     const fetchData = async (url, options = {}) => {
@@ -161,22 +190,20 @@
         }
         return json;
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Ошибка на уровне fetchData:', error);
         alert(`Ошибка: ${error.message}`);
         throw error;
       }
     };
 
-    const getTours = async () => {
+    const getTours = async (admin = false) => {
       try {
         const json = await fetchData('{{ url_for('get_tours') }}');
-        addTours(json.data);
+        addTours(json.data, admin);
       } catch (error) {
         console.error('Ошибка получения списка туров:', error);
       }
     };
-
-    getTours();
 
     const getTour = async (id) => {
       try {
@@ -283,6 +310,41 @@
       loginButton.removeEventListener('click', showLoginForm);
       loginButton.addEventListener('click', logout);
       getProfile();
+    }
+
+    const checkAdmin = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        location.href = '{{ url_for('index') }}';
+        // TODO: добавить сообщение, что надо авторизоваться как админ
+        return;
+      }
+
+      try {
+        const json = await fetchData('{{ url_for('admin_check') }}', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (json.status === 'success') {
+          const current_user_details = json.data.current_user_details;
+        } else {
+          location.href = '{{ url_for('index') }}';
+          console.error('Ошибка при получении иформации о админе:', json.message);
+        }
+      } catch (error) {
+        location.href = '{{ url_for('index') }}';
+        console.error('Ошибка при получении иформации о админе:', error);
+      }
+    };
+
+    const isAdmin = {{ admin|tojson if admin else 'false' }};
+    if (isAdmin) {
+      await checkAdmin();
+      getTours(true);
+    } else {
+      getTours();
     }
   </script>
 </body>

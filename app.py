@@ -42,7 +42,12 @@ def index():
     return render_template("index.j2", tours=tours)
 
 
-@app.route("/login", methods=["POST"])
+@app.get("/admin")
+def admin():
+    return render_template("index.j2", tours=tours, admin=True)
+
+
+@app.post("/login")
 def login():
     data = request.get_json()
     username = data.get("username")
@@ -64,14 +69,14 @@ def profile():
     return make_response("success", current_user)
 
 
-@app.route("/admin", methods=["GET"])
+@app.route("/admin-check", methods=["GET"])
 @jwt_required()
-def admin_route():
-    user = get_jwt_identity()
-    claims = get_jwt()
-    if claims.get("roles") != "admin":
-        return make_response("error", f"Доступ запрещён, {user}", status_code=403)
-    return make_response("success", "Добро пожаловать, администратор!")
+def admin_check():
+    current_user = get_jwt_identity()
+    current_user_details = get_jwt()
+    if "admin" not in current_user_details.get("roles"):
+        return make_response("error", f"Вы не админ, {current_user}", status_code=403)
+    return make_response("success", "Вы успешно вошли, админ!", {"current_user": current_user, "current_user_details": current_user_details})
 
 
 # Структура унифицированного ответа
@@ -156,7 +161,7 @@ def delete_tour(tour_id):
     tour_to_delete = next((tour for tour in tours if tour["id"] == tour_id), None)
 
     tour_name = tour_to_delete["name"]
-    tours = [t for t in tours if t["id"] != tour_id] # Удаляем тур с переданным id
+    tours = [tour for tour in tours if tour["id"] != tour_id] # Удаляем тур с переданным id
     return make_response("success", f"Тур '{tour_name}' удалён"), 202 # Возвращаем подтверждение с кодом 202
 
 
