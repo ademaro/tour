@@ -1,2 +1,6 @@
 .env/
+.venv/
 mytour/
+__pycache__/
+*.pyc
+*.pyo

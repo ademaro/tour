@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <title>Flask API + JS</title>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      background-color: #f8f9fa;
+      color: #007bff;
+      margin: 0;
+      padding: 10px 0;
+      text-align: center;
+    }
+    div {
+      border: 1px solid #f8f9fa;
+      margin: 10px;
+      padding: 10px;
+    }
+    h2 {
+      color: #007bff;
+      margin: 0;
+    }
+    p {
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Туры</h1>
+  <div id="tours">Нет туров...</div>
+
+  <template id="tour">
+    <div>
+      <h2></h2>
+      <p></p>
+      <button>Подробнее</button>
+    </div>
+  </template>
+
+  <template id="tour-details">
+    <div>
+      <h2></h2>
+      <p></p>
+      <p></p>
+      <button>Закрыть</button>
+    </div>
+  </template>
+
+  <script>
+    const tourTemplate = document.querySelector('#tour');
+    const tourDetailsTemplate = document.querySelector('#tour-details');
+    const toursElement = document.querySelector('#tours');
+
+    const addTour = ({ id, title, price }) => {
+      const clone = tourTemplate.content.cloneNode(true);
+      clone.querySelector('h2').textContent = title;
+      clone.querySelector('p').textContent = price;
+      clone.querySelector('button').addEventListener('click', addTourDetailsHandler);
+      clone.querySelector('button').dataset.id = id;
+      toursElement.appendChild(clone);
+    };
+
+    const addTours = (toursData) => {
+      toursElement.innerHTML = '';
+      toursData.forEach(addTour);
+    };
+
+    const getTours = async () => {
+      try {
+        const response = await fetch('{{ url_for('get_tours') }}');
+        const json = await response.json();
+        addTours(json.data);
+      } catch (error) {
+        console.error('Error fetching tours:', error);
+      }
+    };
+
+    getTours();
+
+    const getTour = async (id) => {
+      try {
+        const response = await fetch(`/api/tours/${id}`);
+        const json = await response.json();
+        const { title, description, price } = json.data;
+        const clone = tourDetailsTemplate.content.cloneNode(true);
+        clone.querySelector('h2').textContent = title;
+        clone.querySelector('p').textContent = description;
+        clone.querySelector('p:last-of-type').textContent = price;
+        clone.querySelector('button').addEventListener('click', getTours);
+        toursElement.appendChild(clone);
+      } catch (error) {
+        console.error('Error fetching tour:', error);
+      }
+    };
+
+    const addTourDetailsHandler = (evt) => {
+      if (evt.target.tagName === 'BUTTON') {
+        toursElement.innerHTML = '';
+        const id = evt.target.dataset.id;
+        getTour(id);
+      }
+    };
+  </script>
+</body>
+</html>
