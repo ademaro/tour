@@ -57,11 +57,11 @@ def login():
     return make_response("error", "Неверный логин или пароль", status_code=401)
 
 
-@app.route("/protected", methods=["GET"])
+@app.get("/profile")
 @jwt_required()
-def protected_route():
+def profile():
     current_user = get_jwt_identity()
-    return make_response("success", f"Добро пожаловать, {current_user}!")
+    return make_response("success", current_user)
 
 
 @app.route("/admin", methods=["GET"])
